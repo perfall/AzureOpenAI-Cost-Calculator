@@ -1,0 +1,176 @@
+<!DOCTYPE html>    
+<html>    
+<head>    
+    <title>Azure OpenAI Service - Cost Calculator</title>    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>    
+    <style>    
+        body {    
+            background-color: #2c3e50;    
+            color: #ecf0f1;    
+        }    
+        .form-control {    
+            background-color: #ffffff;    
+            color: #000000;   
+        }    
+        .form-group {    
+            position: relative;    
+        }    
+        .info-icon {    
+            position: absolute;    
+            right: 10px;    
+            top: 35px;    
+            cursor: pointer;    
+        }  
+        label {    
+            font-weight: bold;    
+        }
+        .code-snippet {  
+            background-color: white;  
+            margin: 2px 0;  
+            max-width: 100%;  
+            padding: 2px;  
+        }
+    </style>    
+</head>    
+<body>    
+    <div class="container">    
+        <br>
+        <h1>Azure OpenAI Service - Cost Calculator</h1>    
+        <br>
+        <h4>Token calculator: <a href="https://platform.openai.com/tokenizer">link</a></h4>
+        <br>
+        <form id="cost-calc-form">    
+            <div class="row">  
+                <div class="col-sm">  
+                    <div class="form-group">    
+                        <label>Prompt price per 1000 tokens</label>
+                        <select id="prompt-price" class="form-control">    
+                            <option value="0.0165">0.0165SEK (GPT-3.5-Turbo (4K context))</option>     
+                            <option value="0.033" selected="selected">0.033SEK (GPT-3.5-Turbo (16K context))</option>  
+                            <option value="0.329" >0.329SEK (GPT-4 (8K context))</option>     
+                            <option value="0.658">0.658SEK (GPT-4 (32K context))</option>  
+                        </select>    
+                    </div>    
+                    <div class="form-group">    
+                        <label>Completion price per 1000 tokens</label>    
+                        <select id="completion-price" class="form-control">    
+                            <option value="0.022">0.022SEK (GPT-3.5-Turbo (4K context))</option>     
+                            <option value="0.044" selected="selected">0.044SEK (GPT-3.5-Turbo (16K context))</option>  
+                            <option value="0.658">0.658SEK (GPT-4 (8K context))</option>     
+                            <option value="1.316">1.316SEK (GPT-4 (32K context))</option>  
+                        </select>    
+                    </div>
+                    <div class="form-group">    
+                        <label>Average number of prompt tokens per turn</label>    
+                        <input type="number" id="prompt-tokens" class="form-control" value="200">    
+                    </div>
+                    <div class="form-group">    
+                        <label>Average number of completion tokens per turn</label>    
+                        <input type="number" id="completion-tokens" class="form-control" value="300">    
+                    </div>   
+                </div>    
+                <div class="col-sm">
+                    <div class="form-group">    
+                        <label>System message #tokens</label>    
+                        <input type="number" id="system-message-tokens" class="form-control" value="50">    
+                    </div>    
+                    <div class="form-group">    
+                        <label>Past messages included</label>    
+                        <input type="number" id="past-messages" class="form-control" value="10">    
+                    </div>    
+                    <div class="form-group">    
+                        <label>Average number of turns per conversation</label>    
+                        <input type="number" id="turns-per-conversation" class="form-control" value="10">    
+                    </div>    
+                    <div class="form-group">    
+                        <label>Conversations per month</label>    
+                        <input type="number" id="conversations-per-month" class="form-control" value="100000">    
+                    </div>   
+                    
+                </div>    
+            </div>    
+                
+        </form>    
+        <br>  
+        <div id="result" class="mt-3"></div>    
+        <br>  
+        <p>*The cost is calculated accordingly: <br>    
+
+        </p>
+
+        <div class="code-snippet">  
+            <pre>  
+            <code>  
+            let systemMessageCost = (promptPrice * systemMessageTokens) / 1000  
+            let promptCost = (promptPrice * promptTokens) / 1000  
+            let completionCost = (completionPrice * completionTokens) / 1000  
+  
+            let cumulativeCost = 0  
+            let prevCost = 0  
+  
+            for (var i = 0; i < turnsPerConversation; i++) {  
+                numTurns = i+1  
+                if (numTurns > pastMessages) {  
+                    numTurns = pastMessages  
+                }  
+                currentCost = systemMessageCost + ((promptCost + completionCost) * numTurns)  
+                cumulativeCost += prevCost + currentCost  
+                prevCost = currentCost  
+            }
+
+            costPerMonth = cumulativeCost * conversationsPerMonth  
+            </code>  
+            </pre>  
+        </div>    
+    </div>   
+  
+    <script>    
+        // Enable Bootstrap tooltips    
+        $(function () {    
+            $('[data-toggle="tooltip"]').tooltip()    
+        })    
+    
+        function calculateCost() {    
+            let promptPrice = parseFloat($("#prompt-price").val());    
+            let completionPrice = parseFloat($("#completion-price").val());    
+            let systemMessageTokens = parseFloat($("#system-message-tokens").val());    
+            let promptTokens = parseFloat($("#prompt-tokens").val());    
+            let completionTokens = parseFloat($("#completion-tokens").val());    
+            let pastMessages = parseFloat($("#past-messages").val());    
+            let turnsPerConversation = parseFloat($("#turns-per-conversation").val());    
+            let conversationsPerMonth = parseFloat($("#conversations-per-month").val());    
+  
+            let systemMessageCost = (promptPrice * systemMessageTokens) / 1000  
+            let promptCost = (promptPrice * promptTokens) / 1000  
+            let completionCost = (completionPrice * completionTokens) / 1000  
+  
+            let cumulativeCost = 0  
+            let prevCost = 0  
+  
+            for (var i = 0; i < turnsPerConversation; i++) {  
+                numTurns = i+1  
+                if (numTurns > pastMessages) {  
+                    numTurns = pastMessages  
+                }  
+                currentCost = systemMessageCost + ((promptCost + completionCost) * numTurns)  
+                cumulativeCost += prevCost + currentCost  
+                prevCost = currentCost  
+            }
+
+            costPerMonth = cumulativeCost * conversationsPerMonth 
+            console.log(costPerMonth)
+    
+            $("#result").html("<h2>Monthly cost: " + Number(costPerMonth).toLocaleString() + " SEK* </h2>");    
+    
+        }    
+    
+        $("#cost-calc-form input, #cost-calc-form select").on("change keyup", calculateCost);    
+    
+        // Call the function initially to populate the result with default values    
+        calculateCost();    
+    </script>    
+</body>    
+</html>  
